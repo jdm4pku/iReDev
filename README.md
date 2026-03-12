@@ -1,4 +1,4 @@
-# iReDev — 智能需求开发多Agent框架
+# iReDev Framework
 
 <p align="center">
   <strong>AI-Driven Multi-Agent Requirements Development Platform</strong>
