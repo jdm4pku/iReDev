@@ -1,0 +1,78 @@
+# ============================================================
+# iReDev LLM 配置文件示例
+# ============================================================
+# 使用方法：
+#   1. 复制本文件并重命名为 config.yaml
+#      cp config.example.yaml config.yaml
+#   2. 取消注释你要使用的 LLM 提供商（只选一个）
+#   3. 填入你的 API Key
+#   4. 按需调整模型和参数
+# ============================================================
+
+# LLM 配置（所有 Agent 共用）
+# 取消注释其中一个 Option 即可
+llm:
+
+  # ── Option 1: OpenAI ──────────────────────────────────────
+  # 支持官方 API 及所有兼容 OpenAI 格式的第三方服务
+  type: "openai"
+  api_key: "sk-your-openai-api-key-here"
+  base_url: "https://api.openai.com/v1"       # 第三方服务替换此 URL
+  model: "gpt-4o-mini"                         # 可选: gpt-4o, gpt-4-turbo, gpt-3.5-turbo
+  temperature: 0.0
+  max_output_tokens: 4096
+  max_input_tokens: 100000
+
+  # ── Option 2: Claude (Anthropic) ──────────────────────────
+  # type: "claude"
+  # api_key: "sk-ant-your-anthropic-api-key-here"
+  # model: "claude-3-5-haiku-latest"            # 可选: claude-3-5-sonnet, claude-3-opus
+  # temperature: 0.1
+  # max_output_tokens: 4096
+  # max_input_tokens: 100000
+
+  # ── Option 3: Gemini (Google) ─────────────────────────────
+  # type: "gemini"
+  # api_key: "your-gemini-api-key-here"
+  # model: "gemini-1.5-pro"                     # 可选: gemini-1.5-flash
+  # temperature: 0.1
+  # max_output_tokens: 4096
+  # max_input_tokens: 100000
+
+  # ── Option 4: HuggingFace (本地模型) ──────────────────────
+  # type: "huggingface"
+  # model: "codellama/CodeLlama-34b-Instruct-hf"
+  # api_base: "http://localhost:8000/v1"        # 本地推理服务地址
+  # api_key: "EMPTY"                            # 本地模型可留空
+  # device: "cuda"                              # 可选: cuda, cpu
+  # torch_dtype: "float16"
+  # temperature: 0.1
+  # max_output_tokens: 4096
+  # max_input_tokens: 32000
+
+
+# ============================================================
+# 速率限制（按提供商配置，防止触发 API 限流）
+# 根据你的 API 套餐等级自行调整
+# ============================================================
+rate_limits:
+  claude:
+    requests_per_minute: 50
+    input_tokens_per_minute: 20000
+    output_tokens_per_minute: 8000
+    input_token_price_per_million: 3.0          # 用于成本估算（美元/百万 token）
+    output_token_price_per_million: 15.0
+
+  openai:
+    requests_per_minute: 500
+    input_tokens_per_minute: 200000
+    output_tokens_per_minute: 100000
+    input_token_price_per_million: 0.15
+    output_token_price_per_million: 0.60
+
+  gemini:
+    requests_per_minute: 60
+    input_tokens_per_minute: 30000
+    output_tokens_per_minute: 10000
+    input_token_price_per_million: 0.125
+    output_token_price_per_million: 0.375

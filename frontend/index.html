@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iReDev — AI 需求开发平台</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <!-- Markdown 渲染 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+  <!-- ═══════════ 登录/注册弹窗 ═══════════ -->
+  <div class="modal-overlay" id="authModal" style="display: none;">
+    <div class="modal auth-modal">
+      <button class="auth-modal-close" id="closeAuthModal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <div class="auth-modal-header">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+        </svg>
+        <h2>欢迎使用 iReDev</h2>
+      </div>
+      <!-- Tab 切换 -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" data-tab="login">登录</button>
+        <button class="auth-tab" id="tabRegister" data-tab="register">注册</button>
+      </div>
+      <!-- 登录表单 -->
+      <div id="loginForm" class="auth-form active">
+        <div class="form-group">
+          <label for="loginUsername">用户名</label>
+          <input type="text" id="loginUsername" placeholder="请输入用户名" autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">密码</label>
+          <input type="password" id="loginPassword" placeholder="请输入密码" autocomplete="current-password" />
+        </div>
+        <div class="auth-error" id="loginError"></div>
+        <button class="btn-primary auth-submit" id="loginBtn">登录</button>
+        <p class="auth-switch">还没有账号？<a href="#" id="showRegister">立即注册</a></p>
+      </div>
+      <!-- 注册表单 -->
+      <div id="registerForm" class="auth-form">
+        <div class="form-group">
+          <label for="regUsername">用户名</label>
+          <input type="text" id="regUsername" placeholder="2-30 个字符" autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label for="regPassword">密码</label>
+          <input type="password" id="regPassword" placeholder="至少 4 个字符" autocomplete="new-password" />
+        </div>
+        <div class="form-group">
+          <label for="regPasswordConfirm">确认密码</label>
+          <input type="password" id="regPasswordConfirm" placeholder="再次输入密码" autocomplete="new-password" />
+        </div>
+        <div class="auth-error" id="registerError"></div>
+        <button class="btn-primary auth-submit" id="registerBtn">注册</button>
+        <p class="auth-switch">已有账号？<a href="#" id="showLogin">返回登录</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 主应用界面 ═══════════ -->
+  <div id="app" class="app-layout" style="display: none;">
+
+    <!-- ═══════════ 左侧边栏：会话历史 ═══════════ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+          <span>iReDev</span>
+        </div>
+      </div>
+
+      <button class="new-project-btn" id="newProjectBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        新建项目
+      </button>
+
+      <div class="sidebar-section-label">会话历史</div>
+      <div class="session-list" id="sessionList">
+        <div class="empty-state">暂无会话记录</div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user-bar">
+          <span class="user-avatar" id="userAvatar">U</span>
+          <span class="user-name" id="sidebarUsername">用户</span>
+          <div class="sidebar-user-actions">
+            <button class="icon-btn" id="settingsBtn" title="设置">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </button>
+            <button class="icon-btn" id="logoutBtn" title="退出登录">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <span class="version">iReDev v1.0</span>
+      </div>
+    </aside>
+
+    <!-- ═══════════ 中间：对话窗口 ═══════════ -->
+    <main class="chat-area" id="chatArea">
+      <!-- 欢迎页（无活跃会话时显示） -->
+      <div class="welcome-screen" id="welcomeScreen">
+        <!-- 未登录时的顶部导航栏 -->
+        <div class="welcome-topbar" id="welcomeTopbar">
+          <div class="welcome-topbar-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+            <span>iReDev</span>
+          </div>
+          <div class="welcome-topbar-actions">
+            <button class="btn-ghost" id="topLoginBtn">登录</button>
+            <button class="btn-primary btn-sm" id="topRegisterBtn">注册</button>
+          </div>
+        </div>
+        <div class="welcome-content">
+          <div class="welcome-icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+          </div>
+          <h1>欢迎使用 iReDev</h1>
+          <p>AI 驱动的智能需求开发平台</p>
+          <p class="welcome-desc">
+            通过多 Agent 协作，自动完成从客户访谈到 SRS 文档的完整需求开发流程。<br>
+            <span class="welcome-desc-loggedin">点击左上角「新建项目」开始。</span>
+            <span class="welcome-desc-guest">登录后即可创建项目，开始智能需求开发之旅。</span>
+          </p>
+          <!-- 未登录时的行动按钮 -->
+          <div class="welcome-auth-actions" id="welcomeAuthActions">
+            <button class="btn-primary btn-lg" id="welcomeLoginBtn">登录开始使用</button>
+            <button class="btn-outline btn-lg" id="welcomeRegisterBtn">免费注册</button>
+          </div>
+          <div class="feature-cards">
+            <div class="feature-card">
+              <span class="feature-emoji">🎙</span>
+              <strong>智能访谈</strong>
+              <p>AI 自动生成结构化访谈问题</p>
+            </div>
+            <div class="feature-card">
+              <span class="feature-emoji">📝</span>
+              <strong>自动生成文档</strong>
+              <p>BRD / UserRD / SyRS / SRS</p>
+            </div>
+            <div class="feature-card">
+              <span class="feature-emoji">🔍</span>
+              <strong>质量审查</strong>
+              <p>9 维度自动审查 + 迭代修订</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 对话界面（有活跃会话时显示） -->
+      <div class="chat-container" id="chatContainer" style="display: none;">
+        <!-- 顶部栏 -->
+        <div class="chat-header">
+          <div class="chat-header-left">
+            <button class="sidebar-toggle" id="sidebarToggle">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            </button>
+            <h2 id="chatProjectName">项目名称</h2>
+          </div>
+          <div class="chat-header-right">
+            <span class="status-badge" id="statusBadge">
+              <span class="status-dot"></span>
+              <span class="status-text">就绪</span>
+            </span>
+            <button class="artifact-toggle" id="artifactToggle" title="制品池">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span class="artifact-count" id="artifactCountBadge" style="display:none;">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 消息流 -->
+        <div class="messages-container" id="messagesContainer">
+          <div class="messages-inner" id="messagesList"></div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="input-area" id="inputArea">
+          <!-- 候选回答区 -->
+          <div class="candidates-bar" id="candidatesBar" style="display: none;">
+            <div class="candidates-label">AI 候选回答（点击选择或自行输入）：</div>
+            <div class="candidates-list" id="candidatesList"></div>
+          </div>
+          <div class="input-row">
+            <textarea
+              id="messageInput"
+              placeholder="输入消息..."
+              rows="1"
+              disabled
+            ></textarea>
+            <button class="send-btn" id="sendBtn" disabled title="发送">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ═══════════ 右侧：制品池 ═══════════ -->
+    <aside class="artifact-panel" id="artifactPanel">
+      <div class="artifact-panel-header">
+        <h3>📦 制品池</h3>
+        <button class="close-panel-btn" id="closeArtifactPanel">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 流水线进度 -->
+      <div class="pipeline-progress">
+        <div class="progress-label">
+          <span>流程进度</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- 制品列表 -->
+      <div class="artifact-list" id="artifactList">
+        <div class="artifact-group">
+          <div class="artifact-group-title">📋 文档</div>
+          <div class="artifact-group-items" id="docArtifacts">
+            <div class="empty-artifact">尚无文档制品</div>
+          </div>
+        </div>
+        <div class="artifact-group">
+          <div class="artifact-group-title">📊 模型</div>
+          <div class="artifact-group-items" id="modelArtifacts">
+            <div class="empty-artifact">尚无模型制品</div>
+          </div>
+        </div>
+        <div class="artifact-group">
+          <div class="artifact-group-title">🔍 审查报告</div>
+          <div class="artifact-group-items" id="reviewArtifacts">
+            <div class="empty-artifact">尚无审查报告</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ═══════════ 制品查看器（模态框） ═══════════ -->
+    <div class="artifact-viewer-overlay" id="artifactViewerOverlay" style="display: none;">
+      <div class="artifact-viewer">
+        <div class="artifact-viewer-header">
+          <h3 id="artifactViewerTitle">制品名称</h3>
+          <button class="close-viewer-btn" id="closeViewerBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="artifact-viewer-content" id="artifactViewerContent">
+          <div class="loading-spinner"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ 新建项目对话框 ═══════════ -->
+    <div class="modal-overlay" id="newProjectModal" style="display: none;">
+      <div class="modal">
+        <h3>🚀 新建项目</h3>
+        <p>输入项目名称以开始需求开发流程</p>
+        <input
+          type="text"
+          id="projectNameInput"
+          placeholder="例如：智能家居控制系统"
+          autofocus
+        />
+        <div class="language-select-group">
+          <label for="languageSelect">输出语言</label>
+          <div class="language-options">
+            <label class="language-option">
+              <input type="radio" name="language" value="zh" id="langZh" checked />
+              <span class="language-label">🇨🇳 中文</span>
+            </label>
+            <label class="language-option">
+              <input type="radio" name="language" value="en" id="langEn" />
+              <span class="language-label">🇺🇸 English</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="cancelNewProject">取消</button>
+          <button class="btn-primary" id="confirmNewProject">创建并开始</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ 设置对话框 ═══════════ -->
+    <div class="modal-overlay" id="settingsModal" style="display: none;">
+      <div class="modal settings-modal">
+        <h3>⚙️ LLM 设置</h3>
+        <p>配置您的大模型 API 连接信息（留空则使用系统默认配置）</p>
+        <div class="form-group">
+          <label for="settingsApiKey">API Key</label>
+          <div class="input-with-toggle">
+            <input type="password" id="settingsApiKey" placeholder="sk-..." autocomplete="off" />
+            <button class="toggle-visibility-btn" id="toggleApiKeyVisibility" type="button" title="显示/隐藏">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="settingsBaseUrl">Base URL</label>
+          <input type="text" id="settingsBaseUrl" placeholder="例如：https://api.openai.com/v1" />
+        </div>
+        <div class="form-group">
+          <label for="settingsModel">Model</label>
+          <input type="text" id="settingsModel" placeholder="例如：gpt-4o-mini" />
+        </div>
+        <div class="settings-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span>设置会在下次创建项目时生效。支持 OpenAI 兼容的 API 接口。</span>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="cancelSettings">取消</button>
+          <button class="btn-primary" id="saveSettings">保存设置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

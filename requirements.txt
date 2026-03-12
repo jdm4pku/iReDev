@@ -1,0 +1,5 @@
+pip install anthropic
+pip install tiktoken
+pip install google-generativeai
+pip install openai
+pip install pyyaml
