@@ -364,6 +364,14 @@ function bindAppEvents() {
   $('#newProjectBtn').addEventListener('click', () => showNewProjectModal());
   $('#cancelNewProject').addEventListener('click', () => hideNewProjectModal());
   $('#confirmNewProject').addEventListener('click', () => createNewProject());
+  // 控制模式切换提示
+  document.querySelectorAll('input[name="controlMode"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isStep = radio.value === 'step';
+      document.getElementById('hintPost').style.display = isStep ? 'none' : '';
+      document.getElementById('hintStep').style.display = isStep ? '' : 'none';
+    });
+  });
   dom.projectNameInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') createNewProject();
   });
@@ -470,11 +478,15 @@ async function createNewProject() {
   const languageRadio = document.querySelector('input[name="language"]:checked');
   const language = languageRadio ? languageRadio.value : 'zh';
 
+  // 获取控制模式
+  const controlRadio = document.querySelector('input[name="controlMode"]:checked');
+  const controlMode = controlRadio ? controlRadio.value : 'post';
+
   try {
     const res = await fetch(`${API_BASE}/api/sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ project_name: name, language: language, token: state.token || '' }),
+      body: JSON.stringify({ project_name: name, language: language, control_mode: controlMode, token: state.token || '' }),
     });
     const session = await res.json();
     state.sessions.unshift(session);
@@ -898,6 +910,11 @@ function updateSessionStatus(status) {
 function showNewProjectModal() {
   dom.newProjectModal.style.display = 'flex';
   dom.projectNameInput.value = '';
+  // 重置控制模式为默认
+  const modePost = document.getElementById('modePost');
+  if (modePost) modePost.checked = true;
+  document.getElementById('hintPost').style.display = '';
+  document.getElementById('hintStep').style.display = 'none';
   setTimeout(() => dom.projectNameInput.focus(), 100);
 }
 

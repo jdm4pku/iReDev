@@ -192,8 +192,10 @@ class ArchivistAgent(BaseAgent):
 
         # 初始化 memory
         self.refresh_memory([{"role": "system", "content": self.system_prompt}])
+        kb_prompt = self.get_knowledge_prompt("write_SRS")
         self.add_to_memory(
             "user",
+            f"{kb_prompt}\n\n"
             "I will ask you to write each section of the SRS one at a time. "
             "For each section I will provide the template guidance and relevant excerpts from "
             "BRD, UserRD, and SyRS. Respond with ONLY the Markdown for that section.",
@@ -282,8 +284,10 @@ class ArchivistAgent(BaseAgent):
         """
         logger.info("[Archivist] revise_SRS: applying review fixes...")
 
+        kb_prompt = self.get_knowledge_prompt("revise_SRS")
         prompt = (
             "You are revising an SRS based on a review issue report.\n\n"
+            f"{kb_prompt}\n\n"
             "## Current SRS\n"
             f"{srs_content}\n\n"
             "## Review Issue Report\n"

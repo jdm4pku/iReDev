@@ -90,7 +90,9 @@ class ReviewerAgent(BaseAgent):
         """
         logger.info("[Reviewer] review_SRS: round %d — reviewing SRS...", round_number)
 
+        kb_prompt = self.get_knowledge_prompt("review_SRS")
         prompt = (
+            f"{kb_prompt}\n\n"
             f"## SRS Under Review (Round {round_number})\n\n"
             f"{srs_content}\n\n"
             "## Task\n"

@@ -1151,6 +1151,14 @@ html, body {
   user-select: none;
 }
 
+.control-mode-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--c-text-secondary);
+  padding: 4px 8px;
+  min-height: 20px;
+}
+
 .btn-primary,
 .btn-secondary {
   padding: 8px 20px;

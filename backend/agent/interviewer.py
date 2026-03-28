@@ -185,6 +185,9 @@ class InterviewerAgent(BaseAgent):
         turns = max_turns or self.max_turns
         logger.info("[Interviewer] Starting interview for project: %s...", project_description[:80])
 
+        # ── Step 0: 将项目描述注入 Customer 的上下文 ──────────────────────
+        human_customer.inject_project_context(project_description)
+
         # ── Step 1: 理解 BRD 模版，生成访谈问题清单 ──────────────────────
         question_list = self._generate_question_list(project_description)
         logger.info("[Interviewer] Generated question list:\n%s", question_list)
@@ -258,11 +261,14 @@ class InterviewerAgent(BaseAgent):
         Step 1a: 理解 BRD 模版 → 生成访谈问题清单。
         使用独立 messages，不污染主 memory。
         """
+        kb_prompt = self.get_knowledge_prompt("interview_with_customer")
         messages = [
             self.llm.format_message("system", self.system_prompt),
             self.llm.format_message(
                 "user",
                 f"""You are preparing for a requirements interview.
+
+{kb_prompt}
 
 ## Project Description (provided by customer)
 {project_description}
@@ -428,10 +434,11 @@ Output ONLY the numbered question list in Markdown format.{self.lang_reminder}""
         # ── 刷新 memory：回到 system_prompt 干净状态 ─────────────────────
         self.refresh_memory([{"role": "system", "content": self.system_prompt}])
 
-        # 将 BRD 模版 + 对话记录加入 memory
+        # 将 知识库 + BRD 模版 + 对话记录加入 memory
+        kb_prompt = self.get_knowledge_prompt("generate_BRD")
         self.add_to_memory(
             "user",
-            f"## BRD Template\n{self.brd_template}\n\n## Interview Dialogue\n{dialogue_content}",
+            f"{kb_prompt}\n\n## BRD Template\n{self.brd_template}\n\n## Interview Dialogue\n{dialogue_content}",
         )
         self.add_to_memory(
             "assistant",
@@ -588,11 +595,14 @@ Output ONLY the numbered question list in Markdown format.{self.lang_reminder}""
         userlist_md:
             完整 UserList.md Markdown 文本
         """
+        kb_prompt = self.get_knowledge_prompt("capture_persona")
         messages = [
             self.llm.format_message("system", self.system_prompt),
             self.llm.format_message(
                 "user",
                 f"""Analyze the following Business Requirements Document and identify all distinct end-user roles (personas) that will interact with the system.
+
+{kb_prompt}
 
 ## BRD Content
 {brd_content}
@@ -828,12 +838,15 @@ Output ONLY valid PlantUML code (no explanation, no markdown fences).{self.lang_
 
         # 个性化 enduser 访谈 system prompt（用于生成问题的 interviewer 侧）
         project_ctx = getattr(enduser_agent, "project_context", "") or ""
+        kb_prompt = self.get_knowledge_prompt("interview_with_enduser")
         enduser_interview_system = (
             self.enduser_q_prompt
             .replace("{PERSONA_NAME}", persona_name)
             .replace("{PERSONA_DESCRIPTION}", persona_desc)
             .replace("{PROJECT_CONTEXT}", project_ctx or "No project context provided.")
         )
+        if kb_prompt:
+            enduser_interview_system += "\n\n" + kb_prompt
 
         # 独立的 interviewer memory（不污染主 memory）
         iv_memory: List[Dict[str, Any]] = [
@@ -950,9 +963,10 @@ Output ONLY valid PlantUML code (no explanation, no markdown fences).{self.lang_
 
         # ── Memory 重置 ────────────────────────────────────────────────
         self.refresh_memory([{"role": "system", "content": self.system_prompt}])
+        kb_prompt = self.get_knowledge_prompt("write_userRD")
         self.add_to_memory(
             "user",
-            f"## UserRD Template\n{self.userrd_template}\n\n"
+            f"{kb_prompt}\n\n## UserRD Template\n{self.userrd_template}\n\n"
             f"## End-User Interview Dialogue\n{enduser_dialogue_content}",
         )
         self.add_to_memory(

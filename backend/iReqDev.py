@@ -243,6 +243,11 @@ class iReqDevTeam:
                     with open(full_path, "r", encoding="utf-8") as f:
                         userrd_content = f.read()
 
+            # 人在回路审查 UserRD.md（由 InterviewerAgent 负责修订）
+            userrd_content = self._human_review(
+                "UserRD.md", userrd_content, self.interview_agent,
+            )
+
             self.analyst_agent.process(
                 "requirements_modeling",
                 userrd_content=userrd_content,

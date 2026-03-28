@@ -308,6 +308,23 @@
             </label>
           </div>
         </div>
+        <div class="language-select-group">
+          <label>流程控制模式</label>
+          <div class="language-options">
+            <label class="language-option">
+              <input type="radio" name="controlMode" value="post" id="modePost" checked />
+              <span class="language-label">🚀 自动流程</span>
+            </label>
+            <label class="language-option">
+              <input type="radio" name="controlMode" value="step" id="modeStep" />
+              <span class="language-label">🔍 逐步审查</span>
+            </label>
+          </div>
+          <div class="control-mode-hint" id="controlModeHint">
+            <span id="hintPost">全自动运行，流程结束后查看产出制品。</span>
+            <span id="hintStep" style="display:none;">关键制品生成后暂停，由您逐一审查并提出修改意见。</span>
+          </div>
+        </div>
         <div class="modal-actions">
           <button class="btn-secondary" id="cancelNewProject">取消</button>
           <button class="btn-primary" id="confirmNewProject">创建并开始</button>

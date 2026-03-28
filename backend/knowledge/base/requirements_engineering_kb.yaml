@@ -1,0 +1,365 @@
+# =============================================================================
+# Requirements Engineering Knowledge Base
+# =============================================================================
+# A structured knowledge base for guiding multi-agent requirements development.
+# Organized into three categories:
+#   1. Domain Knowledge   (DK)  — Core concepts and principles
+#   2. Typical Methodology (TM) — Process frameworks and techniques
+#   3. Common Strategy     (CS) — Practical strategies and best practices
+#
+# Each entry specifies:
+#   - applicable_phase  : when it applies in the RE lifecycle
+#   - target_agent      : which agent(s) should consume this knowledge
+#   - trigger           : contextual condition that activates the entry
+#   - expected_use      : how the agent should apply the knowledge
+#   - source_book       : reference chapter from "Software Requirements" (Wiegers & Beatty)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Domain Knowledge — Foundational RE concepts
+# -----------------------------------------------------------------------------
+domain_knowledge:
+
+  - id: DK-001
+    category: Domain Knowledge
+    name: Requirements levels and types
+    normalized_content: |
+      需求应区分层次与类型，至少包括业务需求、用户需求和功能/质量层面的产品需求；
+      在分析与文档化时要明确区分产品需求和项目需求，避免混淆"系统该做什么"和"项目如何交付"。
+    applicable_phase: [analysis, specification, validation]
+    target_agent: [analyst, archivist, reviewer]
+    trigger: "当输入中混杂业务目标、用户诉求、实现细节、项目约束时"
+    expected_use: "先做需求分层，再决定记录位置、分析方式与追踪关系"
+    source_book: "Chapter 1"
+
+  - id: DK-002
+    category: Domain Knowledge
+    name: Customer–development partnership
+    normalized_content: |
+      需求开发不是单向记录，而是客户与开发方的协作过程；
+      需要识别决策者、建立 agreement，并形成 requirements baseline。
+    applicable_phase: [elicitation, analysis, management]
+    target_agent: [interviewer, analyst, reviewer]
+    trigger: "当多个 stakeholder 给出不同诉求或需求未达成一致时"
+    expected_use: "显式确认决策权、分歧点和基线状态"
+    source_book: "Chapter 2"
+
+  - id: DK-003
+    category: Domain Knowledge
+    name: Business requirements and project scope
+    normalized_content: |
+      业务需求应明确 business benefits、product vision、project scope、scope limitations 和 business context；
+      作用域决策应由 business objectives 驱动。
+    applicable_phase: [elicitation, analysis, specification]
+    target_agent: [analyst, archivist]
+    trigger: "当项目目标模糊、范围蔓延或存在 scope change 时"
+    expected_use: "先澄清 business objectives，再判断需求是否在 scope 内"
+    source_book: "Chapter 5"
+
+  - id: DK-004
+    category: Domain Knowledge
+    name: User classes and user representatives
+    normalized_content: |
+      需求获取需要区分不同 user classes，并通过 personas、product champion 或 user representatives 建立有效代表机制；
+      不能把所有用户看作同质群体。
+    applicable_phase: [elicitation, analysis]
+    target_agent: [interviewer, analyst]
+    trigger: "当系统面向多类用户或不同角色需求冲突时"
+    expected_use: "先做 user classification，再分别收集和比较需求"
+    source_book: "Chapter 6"
+
+  - id: DK-005
+    category: Domain Knowledge
+    name: Business rules as enterprise-level assets
+    normalized_content: |
+      business rules 包括政策、法规、标准、计算逻辑与约束，应独立于项目需求存储；
+      某些规则会派生成功能需求，二者之间需要建立追踪关系。
+    applicable_phase: [analysis, specification, validation]
+    target_agent: [analyst, archivist, reviewer]
+    trigger: "当输入中出现政策、法规、资格条件、计算公式、约束条件时"
+    expected_use: "先识别是否属于 rule，再判断它导出的 requirement"
+    source_book: "Chapter 9"
+
+  - id: DK-006
+    category: Domain Knowledge
+    name: Nonfunctional quality expectations
+    normalized_content: |
+      需求不仅包括功能，还包括 performance、reliability、usability、modifiability 及接口、约束、国际化等非功能要求；
+      需要获取用户对这些质量属性的相对重要性。
+    applicable_phase: [elicitation, specification, validation]
+    target_agent: [interviewer, analyst, reviewer]
+    trigger: "当功能已经明确，但系统质量期望未说明时"
+    expected_use: "补问质量属性、边界条件和优先级"
+    source_book: "Chapter 14"
+
+  - id: DK-007
+    category: Domain Knowledge
+    name: Requirements management state model
+    normalized_content: |
+      每条 requirement 应具有独立记录及关键属性，例如 status（proposed/approved/implemented/verified）、
+      origin、change history 和 issue ownership。
+    applicable_phase: [management, validation]
+    target_agent: [archivist, reviewer]
+    trigger: "当需求进入变更、实现、测试或审计阶段时"
+    expected_use: "以 requirement record 为中心维护状态和历史"
+    source_book: "Chapter 27-29"
+
+# -----------------------------------------------------------------------------
+# 2. Typical Methodologies — Process frameworks and techniques
+# -----------------------------------------------------------------------------
+typical_methodologies:
+
+  - id: TM-001
+    category: Typical Methodology
+    name: Requirements development lifecycle framework
+    normalized_content: |
+      需求工程过程应显式覆盖 elicitation、analysis、specification、validation 和 management；
+      项目计划中应把这些活动作为独立任务进行安排。
+    applicable_phase: [elicitation, analysis, specification, validation, management]
+    target_agent: [analyst, archivist, reviewer]
+    trigger: "当开始新项目或搭建 agent workflow 时"
+    expected_use: "用作顶层流程骨架"
+    source_book: "Chapter 3"
+
+  - id: TM-002
+    category: Typical Methodology
+    name: Elicitation planning-execution-followup procedure
+    normalized_content: |
+      需求获取应包括 planning、preparation、performing activities、follow-up 四阶段；
+      事后需整理共享 notes、记录 open issues，并对 customer input 分类。
+    applicable_phase: [elicitation]
+    target_agent: [interviewer, archivist]
+    trigger: "当开始需求访谈、workshop 或调研活动时"
+    expected_use: "指导完整的访谈闭环"
+    source_book: "Chapter 7"
+
+  - id: TM-003
+    category: Typical Methodology
+    name: Multi-technique elicitation toolkit
+    normalized_content: |
+      需求获取应根据场景组合使用 interviews、workshops、focus groups、observations、
+      questionnaires、system interface analysis、user interface analysis 和 document analysis。
+    applicable_phase: [elicitation]
+    target_agent: [interviewer, analyst]
+    trigger: "当单一获取方式信息不足或 stakeholder 类型多样时"
+    expected_use: "按信息类型与约束选择 technique 组合"
+    source_book: "Chapter 7"
+
+  - id: TM-004
+    category: Typical Methodology
+    name: Usage-centric requirement understanding
+    normalized_content: |
+      用户需求可通过 use cases、user stories、usage scenarios 进行组织；
+      需要识别 use cases、展开 use case、验证 use case，并把其与 functional requirements 关联。
+    applicable_phase: [analysis, specification, validation]
+    target_agent: [analyst, archivist, reviewer]
+    trigger: "当需要从用户行为角度组织功能需求时"
+    expected_use: "先建 usage model，再落到功能条目"
+    source_book: "Chapter 8"
+
+  - id: TM-005
+    category: Typical Methodology
+    name: Business rule discovery and documentation
+    normalized_content: |
+      business rules 应按 taxonomy 识别为 facts、constraints、action enablers、inferences、computations；
+      要发现、文档化、原子化，并与 requirement 建立关系。
+    applicable_phase: [analysis, specification, validation]
+    target_agent: [analyst, archivist]
+    trigger: "当输入中混有规则、算法、限制与需求时"
+    expected_use: "先 rule typing，再决定如何约束或导出需求"
+    source_book: "Chapter 9"
+
+  - id: TM-006
+    category: Typical Methodology
+    name: Structured requirement documentation
+    normalized_content: |
+      文档化需求时应采用 SRS 结构、统一 labeling、处理 incompleteness，
+      并区分 system features、data requirements、external interfaces 和其他部分。
+    applicable_phase: [specification]
+    target_agent: [archivist, analyst]
+    trigger: "当开始输出正式需求文档时"
+    expected_use: "按模板分区落盘，避免遗漏"
+    source_book: "Chapter 10"
+
+  - id: TM-007
+    category: Typical Methodology
+    name: Requirement quality writing procedure
+    normalized_content: |
+      单条 requirement 应满足高质量写作标准，减少歧义、遗漏和不可验证表述；
+      编写时应面向后续设计、测试和验收使用。
+    applicable_phase: [specification, validation]
+    target_agent: [archivist, reviewer]
+    trigger: "当 requirement 准备纳入 baseline 时"
+    expected_use: "逐条做质量检查和语言改写"
+    source_book: "Chapter 11"
+
+  - id: TM-008
+    category: Typical Methodology
+    name: Model-assisted analysis
+    normalized_content: |
+      需求分析可结合图形模型，包括 context diagram、ecosystem map、feature tree、event list 以及其他分析模型，
+      以帮助表达作用域、外部实体、功能分组和事件驱动关系。
+    applicable_phase: [analysis, specification]
+    target_agent: [analyst]
+    trigger: "当文字需求难以表达边界、结构或交互时"
+    expected_use: "引入图形/半结构模型辅助澄清"
+    source_book: "Chapter 5, 12"
+
+  - id: TM-009
+    category: Typical Methodology
+    name: Prioritization before commitment
+    normalized_content: |
+      需求应在实现前进行优先级设定，用于范围控制、发布规划和 trade-off；
+      优先级不是静态标签，而是决策机制。
+    applicable_phase: [analysis, management]
+    target_agent: [analyst, reviewer]
+    trigger: "当资源有限、迭代交付或需求过多时"
+    expected_use: "先定 priority，再决定 baseline 和 release content"
+    source_book: "Chapter 16"
+
+  - id: TM-010
+    category: Typical Methodology
+    name: Validation through review and test perspective
+    normalized_content: |
+      验证需求时应进行 peer review / inspection，并用 tests 作为需求的替代表达来发现歧义、缺口与不可验证点。
+    applicable_phase: [validation]
+    target_agent: [reviewer, analyst]
+    trigger: "当需求已成文并准备进入设计/开发/测试时"
+    expected_use: "review + testability 双重检查"
+    source_book: "Chapter 17"
+
+  - id: TM-011
+    category: Typical Methodology
+    name: Requirements management procedure
+    normalized_content: |
+      应维护单条需求记录、状态、变更历史、issue、traceability matrix，并使用 requirements management tool 支撑全过程。
+    applicable_phase: [management]
+    target_agent: [archivist, reviewer]
+    trigger: "当需求进入基线后"
+    expected_use: "以 repository 为中心管理需求生命周期"
+    source_book: "Chapter 27-30"
+
+# -----------------------------------------------------------------------------
+# 3. Common Strategies — Practical best practices
+# -----------------------------------------------------------------------------
+common_strategies:
+
+  - id: CS-001
+    category: Common Strategy
+    name: Train the analyst and educate stakeholders
+    normalized_content: |
+      需求质量依赖分析师能力与 stakeholder 理解；
+      应训练 BA，并让用户、管理者、开发者理解 requirements terminology、concepts 和 practices。
+    applicable_phase: [elicitation, analysis, management]
+    target_agent: [analyst, interviewer]
+    trigger: "当协作质量低、沟通反复或需求理解不一致时"
+    expected_use: "作为组织层知识前提，而不是单次任务补丁"
+    source_book: "Chapter 3"
+
+  - id: CS-002
+    category: Common Strategy
+    name: Identify overlooked stakeholders
+    normalized_content: |
+      overlooked stakeholders 是需求问题的重要来源；
+      在需求启动阶段就应系统识别用户、客户、决策者、开发、测试等不同视角。
+    applicable_phase: [elicitation, analysis]
+    target_agent: [interviewer, analyst]
+    trigger: "当需求看似完整但后续频繁被补充时"
+    expected_use: "把 stakeholder completeness 作为前置检查"
+    source_book: "Chapter 1-2"
+
+  - id: CS-003
+    category: Common Strategy
+    name: Find assumed, implied, and missing requirements
+    normalized_content: |
+      对 stakeholder 输入不能只记录显式需求，还要主动发现 assumed requirements、
+      implied requirements 和 missing requirements。
+    applicable_phase: [elicitation, analysis, validation]
+    target_agent: [interviewer, analyst, reviewer]
+    trigger: "当用户表述高层、简略或默认某些前提时"
+    expected_use: "围绕默认前提、失败场景、边界条件补问"
+    source_book: "Chapter 7"
+
+  - id: CS-004
+    category: Common Strategy
+    name: Separate rules from requirements
+    normalized_content: |
+      corporate policies、government regulations、standards、algorithms 应先登记为 business rules，
+      再追踪到派生 requirement，而不是直接混写进需求列表。
+    applicable_phase: [analysis, specification]
+    target_agent: [analyst, archivist]
+    trigger: "当输入含有必须/禁止/公式/合规描述时"
+    expected_use: "先 rule extraction，再 requirement derivation"
+    source_book: "Chapter 9"
+
+  - id: CS-005
+    category: Common Strategy
+    name: Require unique identification and origin tracing
+    normalized_content: |
+      每条 requirement 必须有唯一标识，并记录来源；
+      这样才能支持 traceability、change tracking 和 impact analysis。
+    applicable_phase: [specification, validation, management]
+    target_agent: [archivist, reviewer]
+    trigger: "当需求开始正式记录时"
+    expected_use: "无 ID、无 origin 的条目不进入正式库"
+    source_book: "Chapter 10, 27-29"
+
+  - id: CS-006
+    category: Common Strategy
+    name: Review from multiple perspectives
+    normalized_content: |
+      评审需求时应引入 analyst、customer、developer、tester 等不同视角；
+      inspection 是高价值质量实践。
+    applicable_phase: [validation]
+    target_agent: [reviewer]
+    trigger: "当 requirement 已成文并进入评审"
+    expected_use: "构造多角色 review panel"
+    source_book: "Chapter 17"
+
+  - id: CS-007
+    category: Common Strategy
+    name: Testability as validation lens
+    normalized_content: |
+      把测试看成需求的另一种表达；
+      任何难以被验证或测试的 requirement 都应被重写或澄清。
+    applicable_phase: [validation]
+    target_agent: [reviewer, analyst]
+    trigger: "当 requirement 含模糊形容词或不可操作表述时"
+    expected_use: "用可测试性反向检验 requirement quality"
+    source_book: "Chapter 17"
+
+  - id: CS-008
+    category: Common Strategy
+    name: Populate traceability during development, not afterward
+    normalized_content: |
+      traceability matrix 应在开发过程中持续维护，而不是收尾时补做；
+      否则会削弱完整性确认与变更影响分析能力。
+    applicable_phase: [management, validation]
+    target_agent: [archivist]
+    trigger: "当需求进入设计、实现、测试链路时"
+    expected_use: "持续链接 requirement-design-code-test"
+    source_book: "Chapter 29"
+
+  - id: CS-009
+    category: Common Strategy
+    name: Use tools to sustain requirements engineering
+    normalized_content: |
+      requirements management tools 对状态跟踪、变更历史、traceability、issue management 很重要，
+      尤其在中大型项目中。
+    applicable_phase: [management]
+    target_agent: [archivist, reviewer]
+    trigger: "当需求数量增长或跨阶段协作复杂时"
+    expected_use: "避免靠文档人工维护全生命周期"
+    source_book: "Chapter 30"
+
+  - id: CS-010
+    category: Common Strategy
+    name: Improve process through assessment and root-cause analysis
+    normalized_content: |
+      requirements process improvement 应包含 current practice assessment、root cause analysis、
+      action planning、metrics 和 road map。
+    applicable_phase: [management]
+    target_agent: [reviewer, analyst]
+    trigger: "当组织层面反复出现需求缺陷或返工时"
+    expected_use: "把问题归因到流程而非单个文档"
+    source_book: "Chapter 31"

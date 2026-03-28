@@ -41,6 +41,41 @@ class HumanCustomerAgent(BaseAgent):
     ):
         super().__init__(name=name, prompt_path=prompt_path, config_path=config_path, language=language)
         # customer memory 从 system_prompt 开始（base.__init__ 已 add_to_memory("system", ...)）
+        self._project_context_injected = False
+
+    # ------------------------------------------------------------------
+    # 项目上下文注入
+    # ------------------------------------------------------------------
+
+    def inject_project_context(self, project_description: str) -> None:
+        """
+        将用户的项目描述注入到 Customer 的 system prompt 和 memory 中，
+        使后续 LLM 生成候选回答时能紧扣项目主题。
+
+        应在 interview_with_customer 开始时调用一次。
+        """
+        if self._project_context_injected:
+            return
+        self._project_context_injected = True
+
+        # 替换 system prompt 中的 {PROJECT_CONTEXT} 占位符
+        updated_prompt = self.system_prompt.replace(
+            "{PROJECT_CONTEXT}",
+            project_description or "No project description provided."
+        )
+
+        # 更新 memory 中的 system 消息
+        if self._memory and self._memory[0].get("role") == "system":
+            self._memory[0] = self.llm.format_message("system", updated_prompt)
+        else:
+            self._memory.insert(0, self.llm.format_message("system", updated_prompt))
+
+        # 额外追加一条 assistant 消息，表明 Customer 已知自己的项目
+        self.add_to_memory(
+            "assistant",
+            f"I have a project idea I'd like to discuss. Here is my project description:\n\n{project_description}"
+        )
+        logger.info("[HumanCustomer] Project context injected (%d chars).", len(project_description))
 
     # ------------------------------------------------------------------
     # 核心接口

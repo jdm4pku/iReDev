@@ -5,269 +5,273 @@
 </p>
 
 <p align="center">
-  <em>从客户访谈到 SRS 交付，自动化完成需求工程全流程</em>
+  <em>Automate the entire requirements engineering process — from customer interviews to SRS delivery</em>
+</p>
+
+<p align="center">
+  <a href="README_zh.md">中文文档</a>
 </p>
 
 ---
 
-## 📖 概述
+## 📖 Overview
 
-**iReDev**（intelligent Requirements Development）是一个基于大语言模型（LLM）的多智能体协作平台，模拟真实需求工程团队的完整工作流程。系统由 7 个专业 Agent 协同工作，通过事件驱动的 9 步流水线，自动完成从客户访谈、需求分析到最终 SRS 文档交付的全过程。
+**iReDev** (intelligent Requirements Development) is a multi-agent collaboration platform powered by Large Language Models (LLMs) that simulates a real-world requirements engineering team workflow. The system orchestrates 7 specialized agents through an event-driven 9-step pipeline, automating the full process from customer interviews and requirements analysis to final SRS document delivery.
 
-### 核心特性
+### Key Features
 
-- **多Agent协作**：7 个专业角色 Agent，各司其职，自动协作
-- **事件驱动流水线**：基于 Git 制品池的发布-订阅架构，每一步产出自动触发下一步
-- **Human-in-the-Loop**：关键节点支持人工审查与干预，保障文档质量
-- **多 LLM 支持**：兼容 OpenAI / Claude / Gemini / HuggingFace（本地模型）
-- **中英双语**：所有模板和输出均支持中文、英文
-- **双模式交互**：Web UI（实时 WebSocket）和 CLI 两种运行方式
-- **质量闭环**：内置 Reviewer 多维度自动审查 + 迭代修订机制
+- **Multi-Agent Collaboration**: 7 specialized role-based agents working together autonomously
+- **Event-Driven Pipeline**: Publish-subscribe architecture built on a Git artifact pool — each step's output automatically triggers the next
+- **Human-in-the-Loop**: Supports human review and intervention at critical checkpoints to ensure document quality
+- **Multi-LLM Support**: Compatible with OpenAI / Claude / Gemini / HuggingFace (local models)
+- **Bilingual (EN/ZH)**: All templates and outputs support both English and Chinese
+- **Dual Interaction Modes**: Web UI (real-time WebSocket) and CLI
+- **Quality Feedback Loop**: Built-in Reviewer with multi-dimensional automated review + iterative revision
 
 ---
 
-## 🏗️ 系统架构
+## 🏗️ System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        Frontend (Web UI)                     │
-│              HTML / CSS / JS + WebSocket 实时通信              │
+│            HTML / CSS / JS + WebSocket Real-time Comm        │
 └─────────────────────┬───────────────────────────────────────┘
                       │ WebSocket / REST API
 ┌─────────────────────▼───────────────────────────────────────┐
 │                    Backend (FastAPI Server)                   │
 │                                                              │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │                  iReqDevTeam (编排器)                   │   │
+│  │                iReqDevTeam (Orchestrator)              │   │
 │  │                                                       │   │
 │  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌──────────┐   │   │
 │  │  │Interviewer│ │ Analyst │ │Archivist│ │ Reviewer │   │   │
 │  │  └────┬────┘ └─────────┘ └─────────┘ └──────────┘   │   │
 │  │       │                                               │   │
 │  │  ┌────▼────┐ ┌─────────┐ ┌──────────────────────┐   │   │
-│  │  │Customer │ │ EndUser │ │ HumanREngineer(可选) │   │   │
+│  │  │Customer │ │ EndUser │ │HumanREngineer (opt.) │   │   │
 │  │  └─────────┘ └─────────┘ └──────────────────────┘   │   │
 │  └──────────────────────────────────────────────────────┘   │
 │                           │                                  │
 │  ┌────────────────────────▼─────────────────────────────┐   │
-│  │             GitArtifactPool (制品池)                    │   │
-│  │        Git 仓库 · 文件监测 · 事件订阅/分发              │   │
+│  │             GitArtifactPool (Artifact Pool)            │   │
+│  │       Git Repo · File Watching · Event Pub/Sub         │   │
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🤖 Agent 角色
+## 🤖 Agent Roles
 
-| Agent | 角色 | 职责 |
-|:------|:-----|:-----|
-| **Interviewer** | 需求访谈员 | 核心枢纽。负责客户访谈、生成 BRD、识别用户角色、终端用户访谈、撰写 UserRD |
-| **Customer** | 业务客户 | Human-in-the-Loop 角色。接收问题 → LLM 生成候选回答供真人选择/修改 |
-| **EndUser** | 终端用户 | LLM 模拟的用户角色。基于 UserList 中的角色描述 + 项目上下文回答访谈 |
-| **Analyst** | 需求分析师 | 需求建模（生成用例图）+ 需求分析（抽取分类系统需求，撰写 SyRS） |
-| **Archivist** | 文档归档员 | 整合上游文档撰写 SRS，根据审查报告执行定点修订 |
-| **Reviewer** | 质量审查员 | 对 SRS 执行多维度质量审查（完整性、一致性、可验证性等），输出结构化审查报告 |
-| **HumanREngineer** | 需求工程师（可选） | 人在回路审查关键制品，反馈修改意见由对应 Agent 执行修订 |
-
----
-
-## 🔄 流水线（9 步）
-
-```
- ① 项目描述 ──→ ② 客户访谈 ──→ ③ 生成 BRD ──→ ④ 识别用户角色
-                                                      │
-      ┌───────────────────────────────────────────────┘
-      ▼
- ⑤ 终端用户访谈 ──→ ⑥ 撰写 UserRD ──→ ⑦ 需求建模(用例图)
-                                              │
-      ┌───────────────────────────────────────┘
-      ▼
- ⑧ 需求分析(SyRS) ──→ ⑨ 撰写 SRS + 审查修订循环
-                              │
-                        ┌─────▼─────┐
-                        │  Reviewer  │──→ APPROVED? ──→ 完成 ✓
-                        │   审查     │        │
-                        └───────────┘    No ──▼
-                              ▲         Archivist
-                              │          修订 SRS
-                              └──────────┘
-```
-
-| 步骤 | 触发制品 | 产出制品 | 执行 Agent |
-|:-----|:---------|:---------|:-----------|
-| ① 收集项目描述 | — | `customer_project_description.md` | 用户输入 |
-| ② 客户访谈 | `customer_project_description.md` | `customer_dialogue.md` | Interviewer + Customer |
-| ③ 生成 BRD | `customer_dialogue.md` | `BRD.md` | Interviewer |
-| ④ 识别用户角色 | `BRD.md` | `UserList.md` + `context_diagram.puml` | Interviewer |
-| ⑤ 终端用户访谈 | `UserList.md` | `enduser_dialogue.md` | Interviewer + EndUser×N |
-| ⑥ 撰写 UserRD | `enduser_dialogue.md` | `UserRD.md` | Interviewer |
-| ⑦ 需求建模 | `UserRD.md` | `use_case_diagram.puml` + `.png` | Analyst |
-| ⑧ 需求分析 | `use_case_diagram.png` | `SyRS.md` | Analyst |
-| ⑨ SRS + 审查 | `SyRS.md` | `SRS.md` + `issue_*.md` | Archivist + Reviewer |
+| Agent | Role | Responsibility |
+|:------|:-----|:---------------|
+| **Interviewer** | Requirements Interviewer | Core hub. Conducts customer interviews, generates BRD, identifies user roles, conducts end-user interviews, writes UserRD |
+| **Customer** | Business Customer | Human-in-the-Loop role. Receives questions → LLM generates candidate answers for human selection/editing |
+| **EndUser** | End User | LLM-simulated user roles. Answers interviews based on role descriptions from UserList + project context |
+| **Analyst** | Requirements Analyst | Requirements modeling (use case diagrams) + analysis (extracts and classifies system requirements, writes SyRS) |
+| **Archivist** | Document Archivist | Integrates upstream documents to write SRS; performs targeted revisions based on review reports |
+| **Reviewer** | Quality Reviewer | Multi-dimensional quality review of SRS (completeness, consistency, verifiability, etc.); outputs structured review reports |
+| **HumanREngineer** | RE Engineer (optional) | Human-in-the-loop review of key artifacts; feedback is executed by the corresponding agent |
 
 ---
 
-## 🚀 快速开始
+## 🔄 Pipeline (9 Steps)
 
-### 环境要求
+```
+ ① Project Description ──→ ② Customer Interview ──→ ③ Generate BRD ──→ ④ Identify User Roles
+                                                                              │
+      ┌───────────────────────────────────────────────────────────────────────┘
+      ▼
+ ⑤ End-User Interviews ──→ ⑥ Write UserRD ──→ ⑦ Requirements Modeling (Use Cases)
+                                                        │
+      ┌─────────────────────────────────────────────────┘
+      ▼
+ ⑧ Requirements Analysis (SyRS) ──→ ⑨ Write SRS + Review-Revision Loop
+                                            │
+                                      ┌─────▼─────┐
+                                      │  Reviewer  │──→ APPROVED? ──→ Done ✓
+                                      │  Review    │        │
+                                      └───────────┘    No ──▼
+                                            ▲         Archivist
+                                            │         Revises SRS
+                                            └──────────┘
+```
+
+| Step | Trigger Artifact | Output Artifact | Executing Agent |
+|:-----|:-----------------|:----------------|:----------------|
+| ① Collect Project Description | — | `customer_project_description.md` | User Input |
+| ② Customer Interview | `customer_project_description.md` | `customer_dialogue.md` | Interviewer + Customer |
+| ③ Generate BRD | `customer_dialogue.md` | `BRD.md` | Interviewer |
+| ④ Identify User Roles | `BRD.md` | `UserList.md` + `context_diagram.puml` | Interviewer |
+| ⑤ End-User Interviews | `UserList.md` | `enduser_dialogue.md` | Interviewer + EndUser×N |
+| ⑥ Write UserRD | `enduser_dialogue.md` | `UserRD.md` | Interviewer |
+| ⑦ Requirements Modeling | `UserRD.md` | `use_case_diagram.puml` + `.png` | Analyst |
+| ⑧ Requirements Analysis | `use_case_diagram.png` | `SyRS.md` | Analyst |
+| ⑨ SRS + Review | `SyRS.md` | `SRS.md` + `issue_*.md` | Archivist + Reviewer |
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
 
 - Python 3.9+
-- Git（制品池依赖 Git 进行版本管理）
+- Git (the artifact pool relies on Git for version management)
 
-### 安装
+### Installation
 
 ```bash
-# 克隆项目
+# Clone the repository
 git clone <repo-url>
 cd iReDev
 
-# 创建虚拟环境
+# Create a virtual environment
 python3 -m venv venv
 source venv/bin/activate
 
-# 安装依赖
+# Install dependencies
 pip install anthropic tiktoken google-generativeai openai pyyaml fastapi uvicorn
 ```
 
-### 配置 LLM
+### Configure LLM
 
-编辑 `backend/config/config.yaml`，选择你的 LLM 提供商并填入 API Key：
+Edit `backend/config/config.yaml` to select your LLM provider and enter your API key:
 
 ```yaml
 llm:
-  # OpenAI / 兼容 API
+  # OpenAI / Compatible API
   type: "openai"
   api_key: "your-api-key"
-  base_url: "https://api.openai.com/v1"  # 可替换为兼容端点
+  base_url: "https://api.openai.com/v1"  # Can be replaced with a compatible endpoint
   model: "gpt-4o-mini"
   temperature: 0.0
   max_output_tokens: 4096
 
-  # 或使用 Claude
+  # Or use Claude
   # type: "claude"
   # api_key: "your-anthropic-api-key"
   # model: "claude-3-5-haiku-latest"
 
-  # 或使用 Gemini
+  # Or use Gemini
   # type: "gemini"
   # api_key: "your-gemini-api-key"
   # model: "gemini-1.5-pro"
 ```
 
-### 运行方式
+### Running
 
-#### 方式一：Web UI（推荐）
+#### Option 1: Web UI (Recommended)
 
 ```bash
 python backend/server.py
 ```
 
-打开浏览器访问 `http://localhost:8000`，注册账号后即可开始项目。
+Open your browser and navigate to `http://localhost:8000`. Register an account to get started.
 
-#### 方式二：CLI 模式
+#### Option 2: CLI Mode
 
 ```bash
-# 快速演示（中文，无人工干预）
+# Quick demo (Chinese output, no human intervention)
 python run_demo_cli.py
 
-# 完整参数
+# Full parameters
 python -m backend.run_iReqDev \
   --project_name "my_project" \
   --workspace "output" \
-  --language zh \
-  --human_in_loop  # 启用人工审查
+  --language en \
+  --human_in_loop  # Enable human review
 ```
 
 ---
 
-## 📂 项目结构
+## 📂 Project Structure
 
 ```
 iReDev/
 ├── backend/
-│   ├── iReqDev.py              # 核心编排器（流水线控制）
-│   ├── server.py               # FastAPI Web 服务器
-│   ├── run_iReqDev.py          # CLI 入口
-│   ├── agent/                  # Agent 实现
-│   │   ├── base.py             # BaseAgent 基类
-│   │   ├── interviewer.py      # 访谈代理（核心枢纽）
-│   │   ├── analyst.py          # 需求分析代理
-│   │   ├── archivist.py        # 文档归档代理
-│   │   ├── reviewer.py         # 质量审查代理
-│   │   ├── enduser.py          # LLM 模拟终端用户
-│   │   ├── human_customer.py   # 人在回路客户
-│   │   ├── human_REngineer.py  # 人在回路需求工程师
-│   │   └── human.py            # 人类交互基类
+│   ├── iReqDev.py              # Core orchestrator (pipeline control)
+│   ├── server.py               # FastAPI web server
+│   ├── run_iReqDev.py          # CLI entry point
+│   ├── agent/                  # Agent implementations
+│   │   ├── base.py             # BaseAgent base class
+│   │   ├── interviewer.py      # Interview agent (core hub)
+│   │   ├── analyst.py          # Requirements analysis agent
+│   │   ├── archivist.py        # Document archival agent
+│   │   ├── reviewer.py         # Quality review agent
+│   │   ├── enduser.py          # LLM-simulated end user
+│   │   ├── human_customer.py   # Human-in-the-loop customer
+│   │   ├── human_REngineer.py  # Human-in-the-loop RE engineer
+│   │   └── human.py            # Human interaction base class
 │   ├── config/
-│   │   └── config.yaml         # LLM 及速率限制配置
-│   ├── knowledge/              # 文档模板（中英双语）
+│   │   └── config.yaml         # LLM and rate limit configuration
+│   ├── knowledge/              # Document templates (EN/ZH bilingual)
 │   │   ├── BRD_template[_zh].md
 │   │   ├── SRS_template[_zh].md
 │   │   ├── SyRS_template[_zh].md
 │   │   ├── UserRD_template[_zh].md
 │   │   └── UserList_template[_zh].md
-│   ├── llm/                    # LLM 抽象层
-│   │   ├── base.py             # BaseLLM 接口
-│   │   ├── factory.py          # LLM 工厂方法
-│   │   ├── openai_llm.py       # OpenAI 实现
-│   │   ├── claude_llm.py       # Claude 实现
-│   │   ├── gemini_llm.py       # Gemini 实现
-│   │   ├── huggingface_llm.py  # HuggingFace 实现
-│   │   └── rate_limiter.py     # 速率限制器
+│   ├── llm/                    # LLM abstraction layer
+│   │   ├── base.py             # BaseLLM interface
+│   │   ├── factory.py          # LLM factory method
+│   │   ├── openai_llm.py       # OpenAI implementation
+│   │   ├── claude_llm.py       # Claude implementation
+│   │   ├── gemini_llm.py       # Gemini implementation
+│   │   ├── huggingface_llm.py  # HuggingFace implementation
+│   │   └── rate_limiter.py     # Rate limiter
 │   ├── pool/
-│   │   └── git_artifact_pool.py # Git 制品池（事件驱动核心）
-│   ├── prompt/                 # 各 Agent 的 System Prompt
+│   │   └── git_artifact_pool.py # Git artifact pool (event-driven core)
+│   ├── prompt/                 # System prompts for each agent
 │   └── utils/
-│       └── artifact_saver.py   # 制品写入工具
-├── frontend/                   # Web 前端
+│       └── artifact_saver.py   # Artifact writer utility
+├── frontend/                   # Web frontend
 │   ├── index.html
 │   ├── css/style.css
 │   └── js/app.js
-├── output/                     # 项目输出制品
-├── data/                       # 用户数据
-├── run_demo_cli.py             # CLI 快速演示脚本
-└── requirements.txt            # Python 依赖
+├── output/                     # Project output artifacts
+├── data/                       # User data
+├── run_demo_cli.py             # CLI quick demo script
+└── requirements.txt            # Python dependencies
 ```
 
 ---
 
-## 📄 产出制品
+## 📄 Output Artifacts
 
-每个项目运行后在 `output/<项目名>/` 下生成以下制品：
+After each project run, the following artifacts are generated under `output/<project_name>/`:
 
-| 类型 | 文件 | 说明 |
-|:-----|:-----|:-----|
-| 📌 项目描述 | `customer_project_description.md` | 用户原始项目描述 |
-| 💬 客户访谈 | `customer_dialogue.md` | Interviewer 与客户的完整对话记录 |
-| 📑 BRD | `BRD.md` | 业务需求文档 |
-| 👥 用户列表 | `UserList.md` | 终端用户角色列表 |
-| 📐 上下文图 | `context_diagram.puml` | PlantUML 系统上下文图 |
-| 💬 用户访谈 | `enduser_dialogue.md` | 各终端用户角色的模拟访谈记录 |
-| 📝 UserRD | `UserRD.md` | 用户需求文档 |
-| 📐 用例图 | `use_case_diagram.puml` / `.png` | PlantUML 用例图 + PNG 渲染 |
-| 📊 SyRS | `SyRS.md` | 系统需求规格说明 |
-| 📜 SRS | `SRS.md` | 软件需求规格说明（最终交付物） |
-| 📋 审查报告 | `issue_1.md`, `issue_2.md`, ... | 每轮审查的结构化质量报告 |
+| Category | File | Description |
+|:---------|:-----|:------------|
+| 📌 Project Description | `customer_project_description.md` | Original project description from the user |
+| 💬 Customer Interview | `customer_dialogue.md` | Full dialogue between Interviewer and Customer |
+| 📑 BRD | `BRD.md` | Business Requirements Document |
+| 👥 User List | `UserList.md` | End-user role list |
+| 📐 Context Diagram | `context_diagram.puml` | PlantUML system context diagram |
+| 💬 End-User Interviews | `enduser_dialogue.md` | Simulated interview records for each end-user role |
+| 📝 UserRD | `UserRD.md` | User Requirements Document |
+| 📐 Use Case Diagram | `use_case_diagram.puml` / `.png` | PlantUML use case diagram + PNG rendering |
+| 📊 SyRS | `SyRS.md` | System Requirements Specification |
+| 📜 SRS | `SRS.md` | Software Requirements Specification (final deliverable) |
+| 📋 Review Reports | `issue_1.md`, `issue_2.md`, ... | Structured quality report for each review round |
 
 ---
 
-## ⚙️ 配置说明
+## ⚙️ Configuration
 
-### LLM 提供商
+### LLM Providers
 
-在 `backend/config/config.yaml` 中配置：
+Configure in `backend/config/config.yaml`:
 
-| 提供商 | type 值 | 特点 |
-|:-------|:--------|:-----|
-| OpenAI | `openai` | 支持 `base_url` 自定义，兼容第三方 API |
-| Claude | `claude` | Anthropic Claude 系列模型 |
-| Gemini | `gemini` | Google Gemini 系列模型 |
-| HuggingFace | `huggingface` | 本地部署模型 |
+| Provider | `type` Value | Notes |
+|:---------|:-------------|:------|
+| OpenAI | `openai` | Supports custom `base_url` for third-party compatible APIs |
+| Claude | `claude` | Anthropic Claude model family |
+| Gemini | `gemini` | Google Gemini model family |
+| HuggingFace | `huggingface` | Locally deployed models |
 
-### 速率限制
+### Rate Limiting
 
-每个提供商可独立配置请求频率和 Token 消耗限制：
+Each provider can have independent rate and token consumption limits:
 
 ```yaml
 rate_limits:
@@ -277,26 +281,26 @@ rate_limits:
     output_tokens_per_minute: 100000
 ```
 
-### 运行参数
+### Runtime Parameters
 
-| 参数 | 说明 | 默认值 |
-|:-----|:-----|:------|
-| `project_name` | 项目名称 | — |
-| `language` | 输出语言（`zh` / `en`） | `en` |
-| `human_in_loop` | 是否启用人工审查 | `False` |
-| `max_review_rounds` | 最大审查-修订轮次 | `3` |
+| Parameter | Description | Default |
+|:----------|:------------|:--------|
+| `project_name` | Project name | — |
+| `language` | Output language (`zh` / `en`) | `en` |
+| `human_in_loop` | Enable human review | `False` |
+| `max_review_rounds` | Maximum review-revision rounds | `3` |
 
 ---
 
-## 🌐 Web UI 功能
+## 🌐 Web UI Features
 
-- **用户系统**：登录 / 注册 + Token 认证
-- **LLM 设置**：可在界面上自定义 API Key / Base URL / Model
-- **实时交互**：WebSocket 双向通信，访谈问答即时呈现
-- **候选回答**：客户访谈阶段展示 AI 候选答案，支持一键选择或自定义输入
-- **制品池面板**：右侧实时展示所有产出制品，点击查看全文（支持 Markdown 渲染）
-- **流程进度**：9 步进度条 + 阶段提示信息
-- **多会话管理**：支持同时维护多个项目会话
+- **User System**: Login / Registration + Token-based authentication
+- **LLM Settings**: Customize API Key / Base URL / Model from the UI
+- **Real-Time Interaction**: Bidirectional WebSocket communication with instant interview Q&A display
+- **Candidate Answers**: AI-generated candidate answers during customer interviews — select or customize
+- **Artifact Panel**: Real-time artifact display on the right panel with full-text viewing (Markdown rendering)
+- **Progress Tracking**: 9-step progress bar with stage indicators
+- **Multi-Session Management**: Maintain multiple project sessions simultaneously
 
 ---
 

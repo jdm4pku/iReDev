@@ -193,7 +193,10 @@ class AnalystAgent(BaseAgent):
         调用 LLM 基于 UserRD 生成 PlantUML 用例图。
         返回干净的 PlantUML 源码字符串。
         """
+        kb_prompt = self.get_knowledge_prompt("requirements_modeling")
         prompt = f"""You are generating a UML Use Case Diagram for a software system based on its User Requirements Document.
+
+{kb_prompt}
 
 ## User Requirements Document (UserRD)
 {userrd_content}
@@ -279,7 +282,10 @@ No markdown fences, no explanation."""
             functional_requirements, quality_attributes,
             constraints, business_rules
         """
+        kb_prompt = self.get_knowledge_prompt("requirements_analysis")
         prompt = f"""You are a Systems Analyst. Analyze the following User Requirements Document and extract all system requirements, classified into four categories.
+
+{kb_prompt}
 
 ## User Requirements Document
 {userrd_content}
@@ -370,9 +376,10 @@ Rules:
 
         # Memory 初始化：system_prompt + 分析结果 + UserRD 摘要
         self.refresh_memory([{"role": "system", "content": self.system_prompt}])
+        kb_prompt = self.get_knowledge_prompt("requirements_analysis")
         self.add_to_memory(
             "user",
-            f"## Structured Requirements Analysis\n```json\n{analysis_context}\n```\n\n"
+            f"{kb_prompt}\n\n## Structured Requirements Analysis\n```json\n{analysis_context}\n```\n\n"
             f"## Original UserRD (first 2000 chars)\n{userrd_content[:2000]}…",
         )
         self.add_to_memory(

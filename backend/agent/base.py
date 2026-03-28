@@ -5,6 +5,7 @@ from pathlib import Path
 
 from ..llm.factory import LLMFactory
 from ..llm.base import BaseLLM
+from ..utils.knowledge_loader import KnowledgeLoader
 
 class BaseAgent(ABC):
     """Base class for all agents in the iReDev framework."""
@@ -46,6 +47,7 @@ class BaseAgent(ABC):
         self._monitor: list[Dict[str,Any]] = [] # monitor which generated requirements artifacts
         self._action_list: list[Dict[str,Any]] = [] # which actions can be done
         self._knowledge_base: list[Dict[str,Any]] = [] # store knowledge to support this agent
+        self._knowledge_loader = KnowledgeLoader()
         self.llm, self.llm_params = self._initialize_llm(agent_name=name, config_path=config_path)
         self.add_to_memory("system", self.system_prompt)
 
@@ -145,6 +147,25 @@ class BaseAgent(ABC):
     # TODO
     def _think(self):
         pass
+
+    def get_knowledge_prompt(self, action: str) -> str:
+        """
+        根据当前 agent 名称和 action 从知识库中检索相关条目，
+        格式化为可注入 LLM 提示词的文本块。
+
+        Parameters
+        ----------
+        action : 当前执行的动作名称，如 "interview_with_customer"
+
+        Returns
+        -------
+        str — 格式化的知识提示词（无匹配则返回空字符串）
+        """
+        entries = self._knowledge_loader.query(
+            agent_name=self.agent_name,
+            action=action,
+        )
+        return KnowledgeLoader.format_as_prompt(entries, language=self.language)
 
     @abstractmethod
     def process(self, action):

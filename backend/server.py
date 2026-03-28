@@ -130,10 +130,11 @@ def _get_username_from_token(token: str) -> Optional[str]:
 class ProjectSession:
     """管理单个项目的运行状态和事件队列。"""
 
-    def __init__(self, session_id: str, project_name: str, language: str = "en"):
+    def __init__(self, session_id: str, project_name: str, language: str = "en", control_mode: str = "post"):
         self.id = session_id
         self.project_name = project_name
         self.language = language  # "zh" for Chinese, "en" for English
+        self.control_mode = control_mode  # "post" or "step" (step-by-step human review)
         self.created_at = datetime.now().isoformat(timespec="seconds")
         self.status = "idle"          # idle / running / waiting_input / completed / error
         self.stage = ""               # 当前处理阶段
@@ -192,6 +193,7 @@ class ProjectSession:
             "status": self.status,
             "stage": self.stage,
             "language": self.language,
+            "control_mode": self.control_mode,
             "artifact_count": len(self.artifacts),
             "message_count": len(self.messages),
         }
@@ -251,11 +253,14 @@ def _run_pipeline(session: ProjectSession):
         # 使用用户自定义 config 或全局默认 config
         config_path = getattr(session, "_custom_config_path", None) or CONFIG_PATH
 
+        # 根据控制模式决定是否启用人在回路审查
+        human_in_loop = (session.control_mode == "step")
+
         team = iReqDevTeam(
             project_name=session.project_name,
             output_dir=OUTPUT_BASE,
             config_path=config_path,
-            human_in_loop=False,
+            human_in_loop=human_in_loop,
             max_review_rounds=3,
             language=session.language,
         )
@@ -268,6 +273,10 @@ def _run_pipeline(session: ProjectSession):
 
         # ── 猴子补丁：替换 HumanCustomerAgent 的终端 I/O ────────────────
         _patch_customer(team.customer, session)
+
+        # ── 猴子补丁：替换 HumanREngineerAgent 的终端 I/O（逐步审查模式）
+        if human_in_loop:
+            _patch_human_re(team, session)
 
         # ── 猴子补丁：为各 agent 注入消息钩子 ───────────────────────────
         _patch_agent_logging(team, session)
@@ -456,6 +465,55 @@ def _patch_customer(customer, session: ProjectSession):
         return reply
 
     customer.answer = patched_answer
+
+
+def _patch_human_re(team: iReqDevTeam, session: ProjectSession):
+    """
+    替换 HumanREngineerAgent 的终端交互为 WebSocket 通信。
+    仅当 human_in_loop=True 且 human_re_agent 已实例化时调用。
+    """
+    human_re = team.human_re_agent
+    if human_re is None:
+        return
+
+    def patched_collect_feedback(artifact_name: str, artifact_path: str):
+        """通过 WebSocket 收集用户对制品的修改意见。"""
+        session.push_message("human_re",
+            f"📄 **关键制品已生成：{artifact_name}**\n\n"
+            f"请在右侧制品池中查看 **{artifact_name}** 的内容，然后提出修改意见。\n\n"
+            f"- 如果没有意见，请直接输入 **通过** 或留空回车\n"
+            f"- 如果有修改意见，请详细描述"
+        )
+        reply = session.wait_for_input(
+            f"请审查 {artifact_name} 并输入修改意见（无意见直接回车）："
+        )
+        session.push_message("user", reply or "（无意见，通过）")
+
+        # 判断是否为通过
+        _APPROVE_KEYWORDS = {
+            "", "ok", "OK", "pass", "PASS", "lgtm", "LGTM",
+            "通过", "没有意见", "没意见", "无",
+        }
+        if (reply or "").strip() in _APPROVE_KEYWORDS:
+            return None
+        return reply.strip()
+
+    def patched_ask_has_more(artifact_name: str) -> bool:
+        """通过 WebSocket 询问用户是否还有修改意见。"""
+        session.push_message("human_re",
+            f"✅ **{artifact_name}** 已根据您的意见修订完成。\n\n"
+            f"请在右侧制品池中查看修订后的内容。还有其他意见吗？\n"
+            f"- 输入 **有** 继续修改\n"
+            f"- 输入 **没有** 或留空进入下一步"
+        )
+        reply = session.wait_for_input(
+            f"{artifact_name} 修改完成，还有意见吗？（有/没有）："
+        )
+        session.push_message("user", reply or "没有")
+        return (reply or "").strip().lower() in ("yes", "y", "是", "有")
+
+    human_re.collect_feedback = patched_collect_feedback
+    human_re.ask_has_more_feedback = patched_ask_has_more
 
 
 def _patch_agent_logging(team: iReqDevTeam, session: ProjectSession):
@@ -782,9 +840,10 @@ async def list_sessions():
 async def create_session(body: dict):
     project_name = body.get("project_name", "Untitled Project")
     language = body.get("language", "en")  # "zh" or "en"
+    control_mode = body.get("control_mode", "post")  # "post" or "step"
     token = body.get("token", "")
     sid = str(uuid.uuid4())[:8]
-    session = ProjectSession(sid, project_name, language=language)
+    session = ProjectSession(sid, project_name, language=language, control_mode=control_mode)
 
     # 如果用户有自定义 LLM 设置，生成临时 config 文件供本次会话使用
     user_overrides = _get_user_llm_overrides(token)
